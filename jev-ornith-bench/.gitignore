@@ -1,0 +1,11 @@
+results/*.json
+results/*.md
+!results/.gitkeep
+__pycache__/
+*.pyc
+.env
+.venv/
+
+# uv.lock IS committed: an experiment whose dependency versions drift between
+# runs is not reproducible, and "which SDK version was that?" is a miserable
+# question to answer three weeks later.

@@ -1,0 +1,103 @@
+# Log triage: excerpt in, root-cause category out.
+#
+# Every state here is a real-shaped log excerpt rather than a description of
+# one. Asking "what does this log mean" tests something different from asking
+# "classify this summary of a log", and only the first resembles the job.
+
+suite: sysadmin-triage
+defaults:
+  mode: decision
+  question:
+    name: cause
+    kind: choice
+    instructions: "What is the most likely root cause of this failure?"
+    options:
+      disk_full: "No space left on a device or filesystem."
+      permissions: "A process lacks the rights to read, write, or bind."
+      config_error: "Malformed or wrong configuration, bad syntax, wrong path."
+      dependency_down: "An upstream service, database, or network peer is unreachable."
+      resource_limit: "Out of memory, file descriptors, processes, or CPU quota."
+      certificate: "An expired, mismatched, or untrusted TLS certificate."
+
+tasks:
+  - id: triage-001
+    state: |
+      Nov 12 03:14:22 web01 postgres[1841]: FATAL: could not write to file "pg_wal/xlogtemp.1841": No space left on device
+      Nov 12 03:14:22 web01 postgres[1841]: LOG: database system is shut down
+    expected: disk_full
+
+  - id: triage-002
+    state: |
+      nginx: [emerg] bind() to 0.0.0.0:443 failed (13: Permission denied)
+      nginx: configuration file /etc/nginx/nginx.conf test failed
+    expected: permissions
+
+  - id: triage-003
+    state: |
+      nginx: [emerg] unknown directive "proxy_pass_header;" in /etc/nginx/sites-enabled/api:42
+      nginx: configuration file /etc/nginx/nginx.conf test failed
+    expected: config_error
+
+  - id: triage-004
+    state: |
+      app[web.1]: sqlalchemy.exc.OperationalError: (psycopg2.OperationalError)
+      app[web.1]:   could not connect to server: Connection refused
+      app[web.1]:   Is the server running on host "db.internal" (10.0.3.14) and accepting TCP/IP connections on port 5432?
+    expected: dependency_down
+
+  - id: triage-005
+    state: |
+      kernel: Out of memory: Killed process 28117 (ruby) total-vm:4210044kB, anon-rss:3881220kB
+      systemd[1]: sidekiq.service: Main process exited, code=killed, status=9/KILL
+    expected: resource_limit
+
+  - id: triage-006
+    state: |
+      curl: (60) SSL certificate problem: certificate has expired
+      More details here: https://curl.se/docs/sslcerts.html
+    expected: certificate
+
+  - id: triage-007
+    state: |
+      dockerd[912]: failed to start container: write /var/lib/docker/overlay2/9f3/diff/tmp/x: no space left on device
+    expected: disk_full
+
+  - id: triage-008
+    state: |
+      sshd[4412]: error: Could not load host key: /etc/ssh/ssh_host_rsa_key
+      sshd[4412]: fatal: No supported key exchange algorithms [preauth]
+    expected: config_error
+    acceptable: [permissions]
+    tags: [boundary]
+    notes: "A missing key file and an unreadable one produce the same line; both readings are defensible."
+
+  - id: triage-009
+    state: |
+      java.net.SocketException: Too many open files
+      	at java.base/sun.nio.ch.Net.accept(Native Method)
+    expected: resource_limit
+
+  - id: triage-010
+    state: |
+      x509: certificate is valid for api.internal, not api.example.com
+    expected: certificate
+
+  # Two plausible causes in one excerpt. The disk filling is what caused the
+  # write to fail, so disk_full is the root cause and permissions is the
+  # surface symptom. Cases like this are where a confident wrong answer costs
+  # an hour of someone's evening.
+  - id: triage-011
+    state: |
+      logrotate: error: error creating output file /var/log/nginx/access.log.1: Permission denied
+      df: /var: 100% used (0 bytes available)
+    expected: disk_full
+    acceptable: [permissions]
+    tags: [boundary]
+
+  - id: triage-012
+    state: |
+      redis[771]: MISCONF Redis is configured to save RDB snapshots, but it is currently not able to persist on disk.
+      redis[771]: Background saving error
+    expected: disk_full
+    acceptable: [config_error]
+    tags: [boundary]

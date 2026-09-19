@@ -1,0 +1,82 @@
+# Ticket routing: pick one queue from a fixed set.
+#
+# The canonical Jev shape -- a closed set of labels, a short state, a decision
+# a human makes in two seconds and gets wrong when tired. Note what is NOT
+# here: nothing asks the model to extract a name or write a summary. Jev
+# cannot emit a string, so anything that needs transcription has to stay with
+# Ornith. Framing clerical work as decisions is what makes it testable at all.
+
+suite: clerical-routing
+defaults:
+  mode: decision
+  question:
+    name: queue
+    kind: choice
+    instructions: "Which team should handle this ticket?"
+    options:
+      billing: "Charges, refunds, invoices, subscriptions, payment methods."
+      technical: "Errors, outages, bugs, login failures, performance."
+      sales: "Pricing for new purchases, upgrades, quotes, contracts."
+      account: "Names, addresses, permissions, seats, closing an account."
+
+tasks:
+  - id: route-001
+    state: "I was charged twice for March. Same amount, same card, two days apart. Please refund one."
+    expected: billing
+
+  - id: route-002
+    state: "Dashboard has been returning 502 for about twenty minutes. Three of us see it."
+    expected: technical
+
+  - id: route-003
+    state: "We're at 40 seats and want to add 15 more. Can you send a quote for the annual plan?"
+    expected: sales
+
+  - id: route-004
+    state: "Please remove Dana from the workspace, she left the company on Friday."
+    expected: account
+
+  # Genuinely on a boundary. Billing owns the charge, account owns the seat
+  # count, and a real support desk would accept either. Marked acceptable
+  # rather than dropped -- a suite made only of clean items overstates every
+  # arm and compresses the differences between them.
+  - id: route-005
+    state: "We were billed for 12 seats but only 9 people ever logged in. Can you fix the seat count and adjust the invoice?"
+    expected: billing
+    acceptable: [account]
+    tags: [boundary]
+
+  - id: route-006
+    state: "My password reset email never arrives. I've tried three times and checked spam."
+    expected: technical
+
+  - id: route-007
+    state: "What's the difference between the Team and Enterprise tiers? We're deciding which to buy."
+    expected: sales
+
+  - id: route-008
+    state: "The card on file expires next month. Where do I update it?"
+    expected: billing
+
+  - id: route-009
+    state: "Exports have been silently truncating at 1000 rows since the update. This is not a limit we hit before."
+    expected: technical
+
+  - id: route-010
+    state: "Our company changed its registered name. We need it updated on the account and on future invoices."
+    expected: account
+    acceptable: [billing]
+    tags: [boundary]
+
+  # Terse and underspecified -- the kind of thing that arrives at 4pm. The
+  # only defensible reading is a login failure.
+  - id: route-011
+    state: "can't get in"
+    expected: technical
+    tags: [terse]
+
+  - id: route-012
+    state: "Renewal quote came in 30% higher than last year and nobody warned us. Who can explain this?"
+    expected: sales
+    acceptable: [billing]
+    tags: [boundary]

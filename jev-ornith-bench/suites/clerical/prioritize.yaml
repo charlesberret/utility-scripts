@@ -1,0 +1,59 @@
+# Urgency scoring against an ordered rubric -- Jev's Score primitive.
+#
+# Scores are graded on the rounded expected value, so an arm that hedges
+# between 1 and 3 lands on 2 and scores as if it were confident. That is a
+# real property of expected-value scoring rather than a quirk of this harness,
+# and it is why the report shows the score distribution as well as accuracy.
+
+suite: clerical-prioritize
+defaults:
+  mode: decision
+  question:
+    name: urgency
+    kind: score
+    instructions: "How urgently does this need a human's attention?"
+    levels:
+      - "Can wait: routine, no deadline, no one is blocked."
+      - "This week: someone is inconvenienced but working."
+      - "Today: someone is blocked, or money or a deadline is at stake."
+      - "Now: active outage, legal exposure, or data loss in progress."
+
+tasks:
+  - id: prio-001
+    state: "Could you add the new starter to the internal wiki when you get a chance? No rush."
+    expected: "0"
+
+  - id: prio-002
+    state: "Production database is refusing connections. The whole site is down."
+    expected: "3"
+
+  - id: prio-003
+    state: "Invoice 4471 is due Friday and finance says it hasn't been approved yet."
+    expected: "2"
+
+  - id: prio-004
+    state: "The office printer is jamming on double-sided jobs. Single-sided works fine."
+    expected: "1"
+
+  - id: prio-005
+    state: "A customer emailed saying their export contained another customer's records."
+    expected: "3"
+    notes: "Data leak. An arm that scores this low is the finding, not a rounding error."
+
+  - id: prio-006
+    state: "Our SSL certificate expires in 34 days. Renewal is a five-minute job."
+    expected: "1"
+    acceptable: ["0"]
+
+  - id: prio-007
+    state: "Two people on the support team can't log into the admin console. Everyone else is fine."
+    expected: "2"
+
+  - id: prio-008
+    state: "Someone suggested we reorganise the shared drive folder structure at some point."
+    expected: "0"
+
+  - id: prio-009
+    state: "Payroll runs tomorrow morning and the hours file hasn't been uploaded."
+    expected: "3"
+    acceptable: ["2"]
