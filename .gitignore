@@ -1,0 +1,13 @@
+# Local editor, agent and environment files
+.local/
+.inbox/
+.claude/
+.cursor/
+.grok/
+.aider*
+.env
+.DS_Store
+HANDOFF*.md
+handoff-*.md
+_Status.md
+THREADS.md

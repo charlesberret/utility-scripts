@@ -1,6 +1,6 @@
 #!/usr/local/bin/bash
 
-dir="/Users/charles/Cloud/Notes/scraped"
+dir="${SCRAPE_DIR:-$HOME/notes/scraped}"   ## override with SCRAPE_DIR
 date=$(date +%Y%m%d) ## date as e.g. 20160704
 fulldate=$(date +'%v') ## date as e.g. 04-July-2016
 
